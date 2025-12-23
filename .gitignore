@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-selfcheck.json
+.dmypy.json
+dmypy.json
+
+# Frontend
+/frontend/node_modules/
+/frontend/dist/
+.DS_Store
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# Output files - you may want to track some of these, but it's good practice to ignore generated files
+/outputs/
+*.stl
+*.py
