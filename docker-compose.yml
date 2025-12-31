@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./backend/outputs:/app/outputs
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    restart: always
+
+  # Optional: Add frontend if we were serving it broadly
+  # frontend:
+  #   build: ./frontend
+  #   ports:
+  #     - "5173:5173"

@@ -1,19 +1,27 @@
-
 {
   "name": "neuralcad-v6",
   "version": "6.0.0",
   "private": true,
   "dependencies": {
+    "@react-spring/three": "^10.0.3",
+    "@react-three/drei": "^9.92.7",
+    "@react-three/fiber": "^8.15.12",
+    "@tailwindcss/postcss": "^4.1.18",
+    "@use-gesture/react": "^10.3.1",
+    "canvas-confetti": "^1.9.2",
+    "framer-motion": "^12.23.26",
+    "lucide-react": "^0.303.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "@react-three/fiber": "^8.15.12",
-    "@react-three/drei": "^9.92.7",
-    "three": "^0.160.0",
-    "lucide-react": "^0.303.0",
-    "canvas-confetti": "^1.9.2"
+    "react-hot-toast": "^2.6.0",
+    "recharts": "^3.6.0",
+    "three": "^0.160.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18",
     "vite": "^5.0.10"
   },
   "scripts": {

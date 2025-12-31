@@ -1,26 +1,42 @@
-# Python
+# Dependencies
+node_modules/
+.venv/
+venv/
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
-.venv/
-pip-selfcheck.json
-.dmypy.json
-dmypy.json
 
-# Frontend
-/frontend/node_modules/
-/frontend/dist/
-.DS_Store
+# Environment
+.env
+.env.local
 
-# IDE / Editor
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# IDE
 .vscode/
 .idea/
+*.swp
+*.swo
 
-# Output files - you may want to track some of these, but it's good practice to ignore generated files
-/outputs/
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated files
+outputs/
 *.stl
-*.py
+*.step
+*.iges
+
+# Backup files
+*.bak
+backup/
+
+# Test files (keep in tests/ folder)
+test_*.py
+!backend/tests/
+
+# Logs
+*.log
