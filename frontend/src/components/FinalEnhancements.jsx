@@ -10,10 +10,10 @@
 
 import { useState, useEffect, memo, lazy, Suspense } from 'react';
 import { Play, Check, ArrowRight } from 'lucide-react';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, RadialLinearScale } from 'chart.js';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, RadialLinearScale, LinearScale, PointElement } from 'chart.js';
 import { Radar, Doughnut } from 'react-chartjs-2';
 
-ChartJS.register(ArcElement, Tooltip, Legend, RadialLinearScale);
+ChartJS.register(ArcElement, Tooltip, Legend, RadialLinearScale, LinearScale, PointElement);
 
 // ==================== ONBOARDING FLOW ====================
 
@@ -96,10 +96,10 @@ export function OnboardingTour({ onComplete }) {
                             <div
                                 key={idx}
                                 className={`h-1 flex-1 rounded-full transition-all ${idx === currentStep
-                                        ? 'bg-cyan-500'
-                                        : idx < currentStep
-                                            ? 'bg-cyan-500/50'
-                                            : 'bg-white/20'
+                                    ? 'bg-cyan-500'
+                                    : idx < currentStep
+                                        ? 'bg-cyan-500/50'
+                                        : 'bg-white/20'
                                     }`}
                             />
                         ))}
@@ -247,8 +247,12 @@ export const EnhancedPromptWizard = memo(function EnhancedPromptWizard({ onPromp
     const [dimensions, setDimensions] = useState({});
     const [unit, setUnit] = useState('mm');
 
-    // Import LiveShapePreview from EnhancedFeatures
-    const { LiveShapePreview } = lazy(() => import('./EnhancedFeatures'));
+    // Lazy load LiveShapePreview component
+    const LiveShapePreview = lazy(() =>
+        import('./EnhancedFeatures').then(module => ({
+            default: module.LiveShapePreview
+        }))
+    );
 
     return (
         <div className="space-y-6">

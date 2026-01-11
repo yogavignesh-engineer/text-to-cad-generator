@@ -6,7 +6,7 @@
  * - Export Templates / Presets
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Clock, Undo2, Redo2, Upload, Save, FolderOpen } from 'lucide-react';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
 import * as THREE from 'three';

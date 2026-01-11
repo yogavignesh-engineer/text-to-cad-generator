@@ -17,8 +17,8 @@ import { AlertCircle, RefreshCw, Lightbulb } from 'lucide-react';
 export function LiveShapePreview({ shape, dimensions, features = {} }) {
     if (!shape || !dimensions) return null;
 
-    const { length = 50, width = 50, height = 50, diameter, radius, teeth } = dimensions;
-    const effectiveRadius = radius || (diameter / 2) || 25;
+    const { length = 50, width = 50, height = 50, diameter, radius, teeth } = dimensions || {};
+    const effectiveRadius = radius || (diameter ? diameter / 2 : null) || 25;
 
     return (
         <div className="relative w-full h-64 bg-gradient-to-br from-gray-900 to-black rounded-xl border border-cyan-500/30 overflow-hidden">
