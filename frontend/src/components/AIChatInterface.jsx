@@ -55,26 +55,49 @@ export function AIChatInterface({ onPromptConfirmed }) {
         setIsGenerating(true);
 
         try {
-            // Simulate AI processing (replace with actual API call)
             const prompt = initialPrompt || currentConversation?.messages[currentConversation.messages.length - 1]?.content;
 
-            // Check for ambiguities
-            const ambiguities = detectAmbiguities(prompt);
+            // REAL API CALL TO BACKEND (not fake logic)
+            const response = await fetch('http://localhost:8001/ai/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: prompt,
+                    conversation_history: currentConversation?.messages.map(m => ({
+                        role: m.role === 'assistant' ? 'model' : m.role,
+                        content: m.content
+                    })) || [],
+                    context: {
+                        currentModel: null,
+                        resolvedClarifications: currentConversation?.context.resolvedClarifications || []
+                    }
+                })
+            });
 
-            if (ambiguities.length > 0 && !currentConversation?.context.resolvedClarifications.length) {
-                // Request clarification
-                const clarification = ambiguities[0];
+            if (!response.ok) {
+                throw new Error(`AI chat failed: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            // Add AI response to conversation
+            addMessage('assistant', data.response, { type: 'response' });
+
+            // Check if there are ambiguities that need clarification
+            if (data.clarification_needed && data.ambiguities.length > 0) {
+                // Ask for clarification
+                const clarification = data.ambiguities[0];
                 addMessage('assistant', clarification.question, {
                     type: 'clarification',
                     options: clarification.options
                 });
             } else {
-                // No ambiguities or already clarified - confirm prompt
+                // No ambiguities - ready to generate
                 addMessage('assistant', '✓ I understand. Generating your CAD model...', {
                     type: 'confirmation'
                 });
 
-                // Build final prompt with clarifications
+                // Build final prompt with AI's understanding
                 const finalPrompt = buildFinalPrompt(prompt, currentConversation?.context.resolvedClarifications || []);
 
                 // Trigger generation
@@ -82,58 +105,24 @@ export function AIChatInterface({ onPromptConfirmed }) {
                     setTimeout(() => onPromptConfirmed(finalPrompt), 500);
                 }
             }
+
+            // Show suggested prompts if any
+            if (data.suggested_prompts && data.suggested_prompts.length > 0) {
+                addMessage('assistant', 'You might also want to:', {
+                    type: 'suggestions',
+                    options: data.suggested_prompts
+                });
+            }
+
         } catch (error) {
-            addMessage('system', `Error: ${error.message}`, { type: 'error' });
+            console.error('AI chat error:', error);
+            addMessage('system', `Error connecting to AI: ${error.message}. The AI service may be unavailable.`, { type: 'error' });
         } finally {
             setIsGenerating(false);
         }
     };
 
-    const detectAmbiguities = (prompt) => {
-        const ambiguities = [];
-        const lower = prompt.toLowerCase();
-
-        // Check for assembly without clear orientation
-        if ((lower.includes('shaft') && lower.includes('gear')) &&
-            !lower.includes('vertical') && !lower.includes('horizontal')) {
-            ambiguities.push({
-                question: 'I\'m creating a gear and shaft assembly. How should the shaft be oriented?',
-                options: [
-                    'Vertical (shaft stands upright through gear)',
-                    'Horizontal (shaft lies flat through gear)',
-                    'At an angle'
-                ]
-            });
-        }
-
-        // Check for missing key dimensions
-        if (lower.includes('box') &&
-            !(lower.includes('x') || (lower.includes('length') && lower.includes('width')))) {
-            ambiguities.push({
-                question: 'What dimensions would you like for the box?',
-                options: [
-                    'Standard cube (50x50x50mm)',
-                    'Thin plate (100x100x10mm)',
-                    'Let me specify custom dimensions'
-                ]
-            });
-        }
-
-        // Check for hole placement ambiguity
-        if (lower.includes('hole') &&
-            !lower.includes('center') && !lower.includes('corner')) {
-            ambiguities.push({
-                question: 'Where should the hole be placed?',
-                options: [
-                    'Center of the part',
-                    'Corners (4 holes)',
-                    'Custom position - I\'ll specify'
-                ]
-            });
-        }
-
-        return ambiguities;
-    };
+    // REMOVED: detectAmbiguities() - now handled by backend Gemini API
 
     const buildFinalPrompt = (original, clarifications) => {
         let prompt = original;
