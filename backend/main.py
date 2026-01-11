@@ -390,41 +390,28 @@ async def generate_cad(request: PromptRequest, response: Response):
         print(f"[{current_id}] ✓ Validation: {validation_results.get('message', 'Unknown')}")
         
         # ============= PHASE 6: RESPONSE PREPARATION =============
-        # Prepare response headers
-        response_headers = {
-            "X-Script-ID": f"gen_{current_id}.py",
-            "X-Manufacturing-Notes": json.dumps(notes),
-            "X-Validation-Results": json.dumps(validation_results),
-            "X-Export-Formats": json.dumps(request.export_formats)
-        }
+        # Prepare file URLs for frontend
+        base_url = "http://localhost:8001"  # TODO: Make this configurable
         
-        # If multiple formats requested, create ZIP
-        if len(request.export_formats) > 1:
-            # Filter existing files
-            existing_files = {fmt: path for fmt, path in output_files.items() if path.exists()}
-            
-            if not existing_files:
-                raise HTTPException(500, "No export files were created")
-            
-            # Create ZIP package
-            zip_path = OUTPUT_DIR / f"neuralcad_{current_id}.zip"
-            ExportManager.create_zip_package(existing_files, zip_path)
-            
-            print(f"[{current_id}] ✓ ZIP package created: {zip_path.name}")
-            
-            return FileResponse(
-                zip_path,
-                filename=f"neuralcad_{current_id}.zip",
-                media_type="application/zip",
-                headers=response_headers
-            )
-        else:
-            # Single file response
-            return FileResponse(
-                first_file,
-                filename=f"neuralcad_{current_id}{first_file.suffix}",
-                headers=response_headers
-            )
+        file_urls = {}
+        for fmt, path in output_files.items():
+            if path.exists():
+                file_urls[fmt] = f"{base_url}/download/{path.name}"
+        
+        # Return JSON response with metadata and file URLs
+        return JSONResponse({
+            "success": True,
+            "model_id": current_id,
+            "files": file_urls,
+            "metadata": {
+                "shape": shape,
+                "dimensions": dims,
+                "validation": validation_results,
+                "script_id": f"gen_{current_id}.py",
+                "manufacturing_notes": notes,
+                "formats_generated": list(file_urls.keys())
+            }
+        })
 
     except HTTPException:
         raise
@@ -455,6 +442,38 @@ async def ai_chat_endpoint(request: ChatRequest):
     except Exception as e:
         print(f"AI chat error: {e}")
         raise HTTPException(500, f"AI chat failed: {str(e)}")
+
+
+@app.get("/download/{filename}")
+async def download_file(filename: str):
+    """Serve generated CAD files (STL, STEP, IGES, GLB)"""
+    file_path = OUTPUT_DIR / filename
+    if not file_path.exists():
+        raise HTTPException(404, f"File not found: {filename}")
+    
+    # Determine media type based on extension
+    media_types = {
+        '.stl': 'model/stl',
+        '.step': 'application/step',
+        '.stp': 'application/step',
+        '.iges': 'model/iges',
+        '.igs': 'model/iges',
+        '.glb': 'model/gltf-binary',
+        '.zip': 'application/zip'
+    }
+    
+    suffix = file_path.suffix.lower()
+    media_type = media_types.get(suffix, 'application/octet-stream')
+    
+    return FileResponse(
+        file_path, 
+        filename=filename, 
+        media_type=media_type,
+        headers={
+            "Access-Control-Allow-Origin": "*",  # Enable CORS for local dev
+            "Cache-Control": "public, max-age=3600"
+        }
+    )
 
 
 @app.get("/download_code/{filename}")
