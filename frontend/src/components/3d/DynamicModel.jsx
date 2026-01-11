@@ -1,41 +1,38 @@
-import React, { useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
-import { parsePrompt } from '../../utils/geometryEngine';
-import { MATERIALS } from '../MaterialSelector';
+import React, { useRef, useEffect } from 'react';
+import { useLoader, useFrame } from '@react-three/fiber';
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
+import { Center, Float } from '@react-three/drei';
 
-// Note: parsePrompt needs to be imported or duplicated.
-// I imported it from utils since I just created it.
+export function DynamicModel({ fileUrl, color = "#29b6f6" }) {
+    // If no file, return null (parent handles loading state)
+    if (!fileUrl) return null;
 
-export default function DynamicModel({ prompt, type }) {
-    const mesh = useRef();
-    const geometry = parsePrompt(prompt);
-    const mat = MATERIALS[type] || MATERIALS.steel;
+    const geom = useLoader(STLLoader, fileUrl);
+    const meshRef = useRef();
 
-    useFrame((state) => {
-        if (mesh.current) {
-            mesh.current.rotation.x = state.clock.getElapsedTime() * 0.2;
-            mesh.current.rotation.y = state.clock.getElapsedTime() * 0.3;
-        }
-    });
+    // Auto-center the geometry
+    useEffect(() => {
+        geom.computeVertexNormals();
+        geom.center();
+    }, [geom]);
 
-    const { shape, dimensions } = geometry;
-
+    // Elite Visuals: Physical Material (Metal look)
     return (
-        <mesh ref={mesh} position={[0, 0, 0]} castShadow receiveShadow>
-            {shape === 'box' && <boxGeometry args={[dimensions.length, dimensions.width, dimensions.height]} />}
-            {(shape === 'cylinder' || shape === 'rod' || shape === 'shaft') && <cylinderGeometry args={[dimensions.diameter / 2, dimensions.diameter / 2, dimensions.height, 32]} />}
-            {shape === 'sphere' && <sphereGeometry args={[dimensions.radius, 32, 32]} />}
-            {shape === 'cone' && <coneGeometry args={[dimensions.diameter / 2, dimensions.height, 32]} />}
-            {shape === 'torus' && <torusGeometry args={[dimensions.radius, dimensions.tube, 16, 100]} />}
-            {shape === 'gear' && <cylinderGeometry args={[dimensions.diameter / 2, dimensions.diameter / 2, 10, 20]} />}
-
-            <meshStandardMaterial
-                color={mat.color}
-                metalness={mat.metalness}
-                roughness={mat.roughness}
-                wireframe={true} // Preview mode as wireframe
-                wireframeLinewidth={2}
-            />
-        </mesh>
+        <Center>
+            <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
+                <mesh ref={meshRef} geometry={geom} castShadow receiveShadow>
+                    <meshPhysicalMaterial
+                        color={color}
+                        metalness={0.8}
+                        roughness={0.2}
+                        clearcoat={1.0}
+                        clearcoatRoughness={0.1}
+                        envMapIntensity={1}
+                    />
+                </mesh>
+            </Float>
+        </Center>
     );
 }
+
+export default DynamicModel;

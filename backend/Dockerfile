@@ -26,11 +26,17 @@ ENV PYTHONPATH="${PYTHONPATH}:/usr/lib/freecad/lib"
 # Copy application code
 COPY . .
 
-# Create outputs directory
-RUN mkdir -p outputs
+# Create a non-root user
+RUN useradd -m -u 1000 appuser
+
+# Create outputs directory and set permissions
+RUN mkdir -p outputs && chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
 
 # Expose port
 EXPOSE 8001
 
-# Run the server
-CMD ["python", "server.py"]
+# Run the enhanced server (main.py)
+CMD ["python", "main.py"]

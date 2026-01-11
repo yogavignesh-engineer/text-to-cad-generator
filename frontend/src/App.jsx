@@ -24,6 +24,7 @@ import CommandPalette from './components/CommandPalette';
 // 3D Components
 import StlModel from './components/3d/StlModel';
 import DynamicModel from './components/3d/DynamicModel';
+import MatrixTerminal from './components/MatrixTerminal';
 
 // Utils
 import { parsePrompt, validateGeometry, calculateBOM, detectModifications } from './utils/geometryEngine';
@@ -370,6 +371,13 @@ export default function App() {
 
         {/* Empty State Overlay */}
         {!modelUrl && !showDemo && <EmptyState />}
+
+        {/* Elite Matrix Terminal Overlay */}
+        <div className="absolute bottom-6 left-6 z-[50] w-[450px] pointer-events-none">
+          <div className="pointer-events-auto">
+            <MatrixTerminal isVisible={loading} />
+          </div>
+        </div>
       </div>
     </div>
   );
