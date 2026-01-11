@@ -356,18 +356,80 @@ async def generate_cad(request: PromptRequest, response: Response):
         
         print(f"[{current_id}] ✓ Script generated: {script_path.name}")
         
-        # ============= PHASE 4: FREECAD EXECUTION =============
-        process = await asyncio.create_subprocess_exec(
-            str(FREECAD_CMD), str(script_path),
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        stdout, stderr = await process.communicate()
+        # ============= PHASE 4: SELF-HEALING FREECAD EXECUTION =============
+        # Try execution with auto-retry and AI-assisted error fixing
+        MAX_RETRIES = 3
+        last_error = None
+        
+        for attempt in range(1, MAX_RETRIES + 1):
+            print(f"[{current_id}] 🔄 Attempt {attempt}/{MAX_RETRIES}: Executing FreeCAD...")
+            
+            try:
+                process = await asyncio.create_subprocess_exec(
+                    str(FREECAD_CMD), str(script_path),
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE
+                )
+                stdout, stderr = await process.communicate()
+                
+                if process.returncode == 0:
+                    # Success!
+                    print(f"[{current_id}] ✓ FreeCAD execution successful on attempt {attempt}")
+                    break
+                else:
+                    # FreeCAD error occurred
+                    error_msg = stderr.decode()
+                    last_error = error_msg
+                    print(f"[{current_id}] ⚠️ Attempt {attempt} failed: {error_msg[:200]}")
+                    
+                    if attempt < MAX_RETRIES and AI_CHAT_AVAILABLE:
+                        # Ask AI to fix the script
+                        print(f"[{current_id}] 🤖 Asking AI to fix the error...")
+                        
+                        fix_prompt = f"""
+                        The following FreeCAD Python script caused an error:
+                        
+                        ```python
+                        {full_script}
+                        ```
+                        
+                        Error message:
+                        {error_msg}
+                        
+                        Please fix this script to resolve the error.
+                        Return ONLY the corrected Python code without any explanation.
+                        """
+                        
+                        # Generate fixed script
+                        model = genai.GenerativeModel('gemini-1.5-flash')
+                        fix_response = model.generate_content(fix_prompt)
+                        fixed_script = fix_response.text
+                        
+                        # Clean up markdown code blocks if present
+                        if '```python' in fixed_script:
+                            fixed_script = fixed_script.split('```python')[1].split('```')[0].strip()
+                        elif '```' in fixed_script:
+                            fixed_script = fixed_script.split('```')[1].split('```')[0].strip()
+                        
+                        # Update script
+                        full_script = fixed_script
+                        with open(script_path, "w", encoding="utf-8") as f:
+                            f.write(full_script)
+                        
+                        print(f"[{current_id}] ✓ Script updated with AI fix")
+                    else:
+                        # No more retries or AI not available
+                        raise HTTPException(500, f"FreeCAD execution failed after {attempt} attempts: {error_msg[:200]}")
+                        
+            except asyncio.TimeoutError:
+                last_error = "Execution timeout"
+                print(f"[{current_id}] ⏱️ Attempt {attempt} timed out")
+                if attempt == MAX_RETRIES:
+                    raise HTTPException(500, "FreeCAD execution timed out")
         
         if process.returncode != 0:
-            error_msg = stderr.decode()
-            print(f"[{current_id}] ✗ FreeCAD Error: {error_msg}")
-            raise HTTPException(500, f"Generation failed: {error_msg[:200]}")
+            # All retries failed
+            raise HTTPException(500, f"Generation failed after {MAX_RETRIES} attempts: {last_error[:200]}")
         
         print(f"[{current_id}] ✓ FreeCAD execution successful")
         print(stdout.decode())  # Show export confirmation
