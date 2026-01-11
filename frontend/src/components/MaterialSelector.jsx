@@ -1,13 +1,32 @@
 import React from 'react';
 import { Settings } from 'lucide-react';
 
+// Material properties with INDIAN MARKET PRICES (₹ per gram, Dec 2025)
 const MATERIALS = {
-    steel: { density: 7.85, pricePerGram: 0.05, name: 'Steel' },
-    aluminum: { density: 2.70, pricePerGram: 0.08, name: 'Aluminum' },
-    abs_plastic: { density: 1.04, pricePerGram: 0.02, name: 'ABS Plastic' },
-    titanium: { density: 4.43, pricePerGram: 0.35, name: 'Titanium' },
-    brass: { density: 8.73, pricePerGram: 0.12, name: 'Brass' },
-    polycarb: { density: 1.20, pricePerGram: 0.03, name: 'Polycarbonate' }
+    steel: {
+        density: 7.85, pricePerGram: 0.055, name: 'Steel',  // ₹55/kg
+        color: '#8a9299', metalness: 0.9, roughness: 0.3
+    },
+    aluminum: {
+        density: 2.70, pricePerGram: 0.29, name: 'Aluminum',  // ₹287/kg
+        color: '#d4d4d8', metalness: 0.95, roughness: 0.2
+    },
+    abs_plastic: {
+        density: 1.04, pricePerGram: 0.15, name: 'ABS Plastic',  // ₹150/kg
+        color: '#f5f5f4', metalness: 0.0, roughness: 0.8
+    },
+    titanium: {
+        density: 4.43, pricePerGram: 5.50, name: 'Titanium',  // ₹5500/kg
+        color: '#78716c', metalness: 0.85, roughness: 0.25
+    },
+    brass: {
+        density: 8.73, pricePerGram: 0.70, name: 'Brass',  // ₹700/kg
+        color: '#d4a574', metalness: 0.9, roughness: 0.15
+    },
+    polycarb: {
+        density: 1.20, pricePerGram: 0.20, name: 'Polycarbonate',  // ₹200/kg
+        color: '#a3e635', metalness: 0.0, roughness: 0.4, transparent: true, opacity: 0.85
+    }
 };
 
 export default function MaterialSelector({ currentMaterial, setMaterial, darkMode }) {

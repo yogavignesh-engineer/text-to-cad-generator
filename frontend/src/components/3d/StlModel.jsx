@@ -1,43 +1,56 @@
-import React, { useRef, useEffect } from 'react';
-import { useFrame } from '@react-three/fiber';
+import React, { useState, useEffect, useMemo } from 'react';
 import { STLLoader } from 'three-stdlib';
-import { Center } from '@react-three/drei';
+import * as THREE from 'three';
 
 const loader = new STLLoader();
 
 export default function StlModel({ url, material }) {
-    const meshRef = useRef();
-    const geometryRef = useRef(null);
+    const [geometry, setGeometry] = useState(null);
 
     useEffect(() => {
         if (!url) return;
+
         loader.load(url, (geo) => {
+            // Center the geometry
+            geo.computeBoundingBox();
+            geo.center();
             geo.computeVertexNormals();
-            geometryRef.current = geo;
+            setGeometry(geo);
+        }, undefined, (error) => {
+            console.error('Error loading STL:', error);
         });
+
+        // Cleanup
+        return () => {
+            if (geometry) {
+                geometry.dispose();
+            }
+        };
     }, [url]);
 
-    useFrame((state) => {
-        if (meshRef.current) {
-            meshRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.3) * 0.2;
-        }
-    });
+    // Calculate scale to fit model nicely
+    const scale = useMemo(() => {
+        if (!geometry) return 1;
+        geometry.computeBoundingBox();
+        const box = geometry.boundingBox;
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        const maxDim = Math.max(size.x, size.y, size.z);
+        // Scale to fit within ~50 units
+        return maxDim > 0 ? 50 / maxDim : 1;
+    }, [geometry]);
 
-    if (!geometryRef.current) return null;
+    if (!geometry) return null;
 
     return (
-        <Center top>
-            <mesh ref={meshRef} geometry={geometryRef.current} castShadow receiveShadow>
-                <meshStandardMaterial
-                    color={material.color}
-                    metalness={material.metalness}
-                    roughness={material.roughness}
-                    clearcoat={material.clearcoat || 0}
-                    transmission={material.transmission || 0}
-                    opacity={material.opacity || 1}
-                    transparent={material.transparent || false}
-                />
-            </mesh>
-        </Center>
+        <mesh geometry={geometry} scale={scale} castShadow receiveShadow>
+            <meshStandardMaterial
+                color={material?.color || '#888888'}
+                metalness={material?.metalness ?? 0.5}
+                roughness={material?.roughness ?? 0.5}
+                transparent={material?.transparent || false}
+                opacity={material?.opacity ?? 1}
+            />
+        </mesh>
     );
 }

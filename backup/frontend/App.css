@@ -1,0 +1,706 @@
+/* ============================================
+   NEURALCAD v7.0 - AWARD-WINNING UI
+   Holographic Industrial Design System
+   ============================================ */
+
+/* MUST BE FIRST - Font Imports */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+:root {
+  /* Holographic Neon Palette */
+  --electric-cyan: #00f0ff;
+  --neon-purple: #b026ff;
+  --hot-pink: #ff006e;
+  --acid-yellow: #ffbe0b;
+  --matrix-green: #39ff14;
+  --deep-blue: #0a0e27;
+  
+  /* Glassmorphism Surfaces */
+  --glass-dark: rgba(10, 14, 39, 0.85);
+  --glass-medium: rgba(20, 25, 50, 0.75);
+  --glass-light: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(0, 240, 255, 0.2);
+  --glass-glow: rgba(0, 240, 255, 0.3);
+  
+  /* Energy Gradients */
+  --gradient-cyber: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #00f0ff 100%);
+  --gradient-holo: linear-gradient(135deg, 
+    #00f0ff 0%, 
+    #b026ff 25%, 
+    #ff006e 50%, 
+    #ffbe0b 75%, 
+    #39ff14 100%);
+  --gradient-energy: radial-gradient(ellipse at center, 
+    rgba(0, 240, 255, 0.3) 0%, 
+    transparent 70%);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Space Grotesk', sans-serif;
+  background: #000;
+  color: white;
+}
+
+/* ============================================
+   HOLOGRAPHIC BACKGROUND WITH ENERGY WAVES
+   ============================================ */
+.neural-container {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  background: radial-gradient(ellipse at top, #1a1a3e 0%, #0a0118 40%, #000 100%);
+  overflow: hidden;
+}
+
+/* Animated Grid Overlay */
+.neural-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(0, 240, 255, 0.04) 3px,
+      rgba(0, 240, 255, 0.04) 6px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 3px,
+      rgba(176, 38, 255, 0.04) 3px,
+      rgba(176, 38, 255, 0.04) 6px
+    );
+  animation: grid-flow 30s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes grid-flow {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(60px, 60px); }
+}
+
+/* Energy Wave Overlay */
+.neural-container::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse 800px 400px at 30% 50%, rgba(0, 240, 255, 0.15), transparent),
+    radial-gradient(ellipse 600px 300px at 70% 60%, rgba(176, 38, 255, 0.12), transparent);
+  animation: energy-pulse 8s ease-in-out infinite;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+@keyframes energy-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.05); }
+}
+
+/* Floating Particles */
+.particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: var(--electric-cyan);
+  border-radius: 50%;
+  box-shadow: 0 0 15px var(--electric-cyan);
+  animation: float-particle 20s infinite;
+  opacity: 0;
+}
+
+.particle:nth-child(2n) {
+  background: var(--neon-purple);
+  box-shadow: 0 0 15px var(--neon-purple);
+  animation-duration: 25s;
+}
+
+.particle:nth-child(3n) {
+  background: var(--hot-pink);
+  box-shadow: 0 0 15px var(--hot-pink);
+  animation-duration: 18s;
+}
+
+@keyframes float-particle {
+  0% { 
+    transform: translate(0, 100vh) scale(0);
+    opacity: 0;
+  }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { 
+    transform: translate(calc(100vw * (var(--drift-x, 0.5) - 0.5)), -100vh) scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* ============================================
+   HOLOGRAPHIC CONTROL PANEL (LEFT)
+   ============================================ */
+.control-panel {
+  position: fixed;
+  left: 30px;
+  top: 30px;
+  bottom: 30px;
+  width: 450px;
+  background: var(--glass-dark);
+  backdrop-filter: blur(50px) saturate(200%);
+  -webkit-backdrop-filter: blur(50px) saturate(200%);
+  border-radius: 32px;
+  border: 2px solid var(--glass-border);
+  box-shadow: 
+    0 0 100px rgba(0, 240, 255, 0.4),
+    inset 0 2px 1px rgba(255, 255, 255, 0.15),
+    inset 0 -2px 1px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  padding: 40px;
+  gap: 24px;
+  z-index: 100;
+  animation: panel-float 6s ease-in-out infinite, slide-in-left 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+@keyframes panel-float {
+  0%, 100% { transform: translateY(0) rotateY(0deg); }
+  50% { transform: translateY(-8px) rotateY(1deg); }
+}
+
+@keyframes slide-in-left {
+  from {
+    transform: translateX(-120px) translateY(40px);
+    opacity: 0;
+    filter: blur(10px);
+  }
+  to {
+    transform: translateX(0) translateY(0);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+.control-panel::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: var(--gradient-holo);
+  border-radius: 32px;
+  opacity: 0;
+  z-index: -1;
+  animation: border-glow 4s ease-in-out infinite;
+}
+
+@keyframes border-glow {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.5; }
+}
+
+/* Neural Core Logo */
+.brand-header {
+  position: relative;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 14px;
+}
+
+.logo-icon {
+  width: 56px;
+  height: 56px;
+  background: var(--gradient-cyber);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: logo-pulse 3s ease-in-out infinite;
+  box-shadow: 0 0 30px rgba(0, 240, 255, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.logo-icon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer-sweep 3s infinite;
+}
+
+@keyframes logo-pulse {
+  0%, 100% {
+    box-shadow: 0 0 30px rgba(0, 240, 255, 0.5);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 60px rgba(176, 38, 255, 0.8), 0 0 100px rgba(0, 240, 255, 0.4);
+    transform: scale(1.05);
+  }
+}
+
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-100%) rotate(45deg); }
+  100% { transform: translateX(200%) rotate(45deg); }
+}
+
+.brand-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 2.4rem;
+  font-weight: 900;
+  background: var(--gradient-holo);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 6px;
+  animation: gradient-shift 4s ease infinite;
+  background-size: 200% 200%;
+  text-shadow: 0 0 30px rgba(0, 240, 255, 0.5);
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.brand-subtitle {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 4px;
+  font-weight: 300;
+  text-transform: uppercase;
+}
+
+/* ============================================
+   HOLOGRAPHIC BUTTONS & INPUTS
+   ============================================ */
+.section-label {
+  font-size: 0.65rem;
+  color: var(--electric-cyan);
+  letter-spacing: 3px;
+  font-weight: 700;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.8);
+}
+
+.material-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.material-btn {
+  padding: 16px 8px;
+  background: var(--glass-light);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  color: white;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+  text-transform: uppercase;
+}
+
+.material-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, var(--electric-cyan), transparent);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.material-btn:hover {
+  transform: translateY(-4px) scale(1.02);
+  border-color: var(--electric-cyan);
+  box-shadow: 
+    0 0 30px rgba(0, 240, 255, 0.5),
+    0 10px 40px rgba(0, 240, 255, 0.3);
+  background: rgba(0, 240, 255, 0.1);
+}
+
+.material-btn:hover::before {
+  opacity: 0.3;
+}
+
+.material-btn.active {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.25), rgba(176, 38, 255, 0.25));
+  border-color: var(--electric-cyan);
+  box-shadow: 
+    0 0 40px rgba(0, 240, 255, 0.6),
+    inset 0 2px 0 rgba(255, 255, 255, 0.3);
+  animation: button-glow 2s ease-in-out infinite;
+}
+
+@keyframes button-glow {
+  0%, 100% { box-shadow: 0 0 40px rgba(0, 240, 255, 0.6); }
+  50% { box-shadow: 0 0 60px rgba(176, 38, 255, 0.8); }
+}
+
+/* Command Prompt Input */
+.prompt-textarea {
+  width: 100%;
+  min-height: 150px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 20px;
+  color: var(--electric-cyan);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  resize: none;
+  outline: none;
+  transition: all 0.4s ease;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.prompt-textarea:focus {
+  border-color: var(--electric-cyan);
+  box-shadow: 
+    0 0 40px rgba(0, 240, 255, 0.4),
+    inset 0 2px 10px rgba(0, 240, 255, 0.2);
+  background: rgba(0, 240, 255, 0.05);
+  animation: input-scan 2s infinite;
+}
+
+@keyframes input-scan {
+  0%, 100% { box-shadow: 0 0 40px rgba(0, 240, 255, 0.4); }
+  50% { box-shadow: 0 0 60px rgba(176, 38, 255, 0.6); }
+}
+
+.prompt-textarea::placeholder {
+  color: rgba(0, 240, 255, 0.4);
+}
+
+/* Generate Button */
+.primary-btn {
+  width: 100%;
+  padding: 24px;
+  background: var(--gradient-cyber);
+  border: none;
+  border-radius: 16px;
+  color: white;
+  font-family: 'Orbitron', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(102, 126, 234, 0.5);
+}
+
+.primary-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+}
+
+.primary-btn:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 
+    0 20px 60px rgba(0, 240, 255, 0.6),
+    0 0 100px rgba(176, 38, 255, 0.4);
+}
+
+.primary-btn:hover::before {
+  transform: translateX(100%);
+}
+
+.primary-btn:active {
+  transform: translateY(-2px) scale(0.98);
+}
+
+.primary-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ============================================
+   HOLOGRAPHIC STATS CARDS (TOP RIGHT)
+   ============================================ */
+.stats-panel {
+  position: fixed;
+  top: 30px;
+  right: 30px;
+  display: flex;
+  gap: 16px;
+  z-index: 100;
+  animation: slide-in-right 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(120px) translateY(-40px);
+    opacity: 0;
+    filter: blur(10px);
+  }
+  to {
+    transform: translateX(0) translateY(0);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+.stat-card {
+  background: var(--glass-dark);
+  backdrop-filter: blur(30px);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  padding: 18px 26px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 
+    0 10px 50px rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(0, 240, 255, 0.2);
+  animation: card-float 5s ease-in-out infinite;
+  transition: all 0.4s ease;
+}
+
+.stat-card:nth-child(2) { animation-delay: 0.5s; }
+.stat-card:nth-child(3) { animation-delay: 1s; }
+
+@keyframes card-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.stat-card:hover {
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 
+    0 15px 60px rgba(0, 240, 255, 0.4),
+    0 0 80px rgba(176, 38, 255, 0.3);
+  border-color: var(--electric-cyan);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--gradient-cyber);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(0, 240, 255, 0.4);
+  animation: icon-pulse 3s ease-in-out infinite;
+}
+
+@keyframes icon-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.stat-value {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--electric-cyan);
+  text-shadow: 0 0 15px rgba(0, 240, 255, 0.8);
+}
+
+/* ============================================
+   PROGRESS & VALIDATION CARDS
+   ============================================ */
+.progress-section {
+  background: rgba(176, 38, 255, 0.15);
+  border: 1px solid rgba(176, 38, 255, 0.4);
+  border-radius: 16px;
+  padding: 20px;
+  animation: slide-up 0.4s ease;
+  box-shadow: 0 0 30px rgba(176, 38, 255, 0.3);
+}
+
+.progress-bar-fill {
+  height: 8px;
+  background: var(--gradient-cyber);
+  border-radius: 10px;
+  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+}
+
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ============================================
+   3D CANVAS ENHANCEMENTS
+   ============================================ */
+.canvas-wrapper {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* Holographic Scanner Frame */
+.scanner-frame {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 600px;
+  border: 2px solid rgba(0, 240, 255, 0.3);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: scanner-rotate 20s linear infinite;
+  z-index: 2;
+}
+
+.scanner-frame::before,
+.scanner-frame::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border: 1px solid rgba(176, 38, 255, 0.2);
+  border-radius: 50%;
+}
+
+.scanner-frame::after {
+  inset: -20px;
+  border-color: rgba(255, 0, 110, 0.2);
+}
+
+@keyframes scanner-rotate {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+@media (max-width: 1400px) {
+  .control-panel {
+    width: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .control-panel {
+    left: 16px;
+    right: 16px;
+    width: auto;
+    bottom: 16px;
+    padding: 24px;
+  }
+  
+  .stats-panel {
+    top: 16px;
+    right: 16px;
+    flex-direction: column;
+  }
+  
+  .material-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ============================================
+   UTILITY ANIMATIONS
+   ============================================ */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
+  20%, 40%, 60%, 80% { transform: translateX(8px); }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gradient-cyber);
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gradient-holo);
+}

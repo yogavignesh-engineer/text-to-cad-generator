@@ -14,6 +14,10 @@ export const useCADGenerator = (API_URL, addToHistory, setLastModel, calculateBO
     const [generatedCode, setGeneratedCode] = useState("");
     const [manufacturingNotes, setManufacturingNotes] = useState([]);
 
+    // NEW: State for DFM & Cost Analysis
+    const [dfmAnalysis, setDfmAnalysis] = useState(null);
+    const [costEstimate, setCostEstimate] = useState(null);
+
     const downloadFile = (blob, filename, mimeType) => {
         const typedBlob = new Blob([blob], { type: mimeType });
         const url = URL.createObjectURL(typedBlob);
@@ -82,6 +86,8 @@ export const useCADGenerator = (API_URL, addToHistory, setLastModel, calculateBO
                 const blob = await response.blob();
                 const scriptHeader = response.headers.get("X-Script-ID");
                 const notesHeader = response.headers.get("X-Manufacturing-Notes");
+                const dfmHeader = response.headers.get("X-DFM-Analysis");
+                const costHeader = response.headers.get("X-Cost-Estimate");
 
                 if (scriptHeader) {
                     setScriptId(scriptHeader);
@@ -92,6 +98,20 @@ export const useCADGenerator = (API_URL, addToHistory, setLastModel, calculateBO
                     try {
                         setManufacturingNotes(JSON.parse(notesHeader));
                     } catch (e) { console.error("Bad notes header"); }
+                }
+
+                // Parse DFM Analysis
+                if (dfmHeader) {
+                    try {
+                        setDfmAnalysis(JSON.parse(dfmHeader));
+                    } catch (e) { console.error("Bad DFM header"); }
+                }
+
+                // Parse Cost Estimate
+                if (costHeader) {
+                    try {
+                        setCostEstimate(JSON.parse(costHeader));
+                    } catch (e) { console.error("Bad cost header"); }
                 }
 
                 setStlBlob(blob);
@@ -118,19 +138,12 @@ export const useCADGenerator = (API_URL, addToHistory, setLastModel, calculateBO
                 throw new Error('Backend error');
             }
         } catch (error) {
-            console.log('Error:', error);
-            toast.error('Generation failed. Using demo mode.');
+            console.error('Generation Error:', error);
+            toast.error('Generation failed. Please check your prompt or try again.');
             setModelUrl(null);
-            setShowDemo(true);
-            setProgress({ status: 'complete', progress: 100, message: 'Demo mode' });
-            setShowConfetti(true);
-            setTimeout(() => setShowConfetti(false), 3000);
-
-            addToHistory(prompt, material, parsedGeometry?.shape || 'box');
-            setLastModel(parsedGeometry);
-            const calculatedBOM = calculateBOM(parsedGeometry, material, MATERIALS);
-            setBom(calculatedBOM);
-            setShowBOM(true);
+            setShowDemo(false);  // Don't show demo mode
+            setProgress({ status: 'error', progress: 0, message: 'Generation failed' });
+            // Don't show confetti or BOM on failure
         } finally {
             setLoading(false);
         }
@@ -145,6 +158,8 @@ export const useCADGenerator = (API_URL, addToHistory, setLastModel, calculateBO
         stats,
         generatedCode,
         manufacturingNotes,
+        dfmAnalysis,
+        costEstimate,
         generateCAD,
         downloadFile,
         downloadCode

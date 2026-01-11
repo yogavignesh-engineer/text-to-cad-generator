@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, History, Settings, RotateCcw, Box, Layers, Play, Download, X, FileDown, Package, Code } from 'lucide-react';
+import { Sparkles, History, Settings, RotateCcw, Box, Layers, Play, Download, X, FileDown, Package, Code, BookOpen, Sliders } from 'lucide-react';
 import MaterialSelector from './MaterialSelector';
 
 export default function ControlPanel({
@@ -9,7 +9,10 @@ export default function ControlPanel({
     validation, parsedParameters, useAI, setUseAI, stlBlob, stepUrl, downloadFile,
     material, setMaterial, shakeButton,
     downloadCode, isOpen, setIsOpen,
-    generatedCode, scriptId // NEW PROP: scriptId
+    generatedCode, scriptId,
+    dfmAnalysis, costEstimate, showDFM, setShowDFM, showCost, setShowCost, setShowBOM,
+    showSamplePrompts, setShowSamplePrompts,
+    showParametricEditor, setShowParametricEditor
 }) {
     const [activeTab, setActiveTab] = useState('input'); // input | code
 
@@ -72,10 +75,10 @@ export default function ControlPanel({
             </div>
 
             {/* Content Area - Scrollable */}
-            <div className="flex-1 overflow-y-auto p-10 pt-6 scrollbar-hide">
+            <div className="flex-1 overflow-y-auto p-10 pt-6 pb-20 scrollbar-hide">
 
                 {activeTab === 'input' ? (
-                    <div className="flex flex-col gap-6">
+                    <div className="flex flex-col gap-6 min-h-full">
 
                         {/* Prompt Section */}
                         <div className="flex flex-col gap-3">
@@ -117,29 +120,15 @@ export default function ControlPanel({
                                 )}
                             </div>
 
-                            {/* Test Prompts Toggle */}
+                            {/* Sample Prompts Library Button */}
                             <button
-                                onClick={() => setShowTestPrompts(!showTestPrompts)}
-                                className="flex justify-between items-center w-full text-[0.7rem] font-medium text-black/40 dark:text-white/40 hover:text-neonc transition-colors px-1"
+                                onClick={() => setShowSamplePrompts(true)}
+                                className="flex items-center justify-center gap-2 w-full text-sm font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 py-3 px-4 rounded-xl shadow-lg shadow-purple-500/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
                             >
-                                <span>Need inspiration? Try example prompts</span>
-                                <span>{showTestPrompts ? '−' : '+'}</span>
+                                <BookOpen size={18} />
+                                <span>SAMPLE PROMPTS LIBRARY</span>
+                                <Sparkles size={16} />
                             </button>
-
-                            {/* Test Prompts Dropdown */}
-                            {showTestPrompts && (
-                                <div className="grid grid-cols-1 gap-2 animate-slide-up">
-                                    {quickPrompts.map((p, i) => (
-                                        <button
-                                            key={i}
-                                            onClick={() => { setPrompt(p); validatePrompt(); }}
-                                            className="text-left text-xs p-3 bg-black/5 dark:bg-white/5 rounded-xl text-black/70 dark:text-white/70 hover:bg-neonc/10 hover:text-neonc border border-transparent hover:border-neonc/30 transition-all"
-                                        >
-                                            {p}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
                         </div>
 
                         {/* Parsed Parameters Display */}
@@ -188,10 +177,26 @@ export default function ControlPanel({
                             </button>
                         </div>
 
-                        {/* Tools Grid */}
+
+                        {/* Parametric Editor Toggle - Show after generation */}
+                        {parsedParameters && parsedParameters.dimensions && (
+                            <button
+                                onClick={() => setShowParametricEditor(!showParametricEditor)}
+                                className={`flex items-center justify-center gap-2 w-full text-sm font-bold py-3 px-4 rounded-xl shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] ${showParametricEditor
+                                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-indigo-500/30'
+                                    : 'bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-indigo-600 dark:text-indigo-400 border-2 border-indigo-500/50 hover:from-indigo-600 hover:to-purple-600 hover:text-white'
+                                    }`}
+                            >
+                                <Sliders size={18} />
+                                <span>PARAMETRIC EDITOR</span>
+                            </button>
+                        )}
+
+                        {/* Tools Grid - 3 columns */}
                         <div className="grid grid-cols-3 gap-3">
                             <button
                                 onClick={() => setShowDimensions(!showDimensions)}
+                                title="Toggle dimension annotations on the 3D model"
                                 className={`p-3 rounded-xl border border-black/10 dark:border-white/10 flex flex-col items-center justify-center gap-1.5 transition-all
                         ${showDimensions ? 'bg-neonc/20 border-neonc/50 text-white' : 'bg-black/5 dark:bg-white/5 text-black/60 dark:text-white/60 hover:bg-black/10 dark:hover:bg-white/10'}`}
                             >
@@ -201,25 +206,63 @@ export default function ControlPanel({
 
                             <button
                                 onClick={() => setShowTolerance(true)}
+                                title="Open GD&T tolerance settings panel"
                                 className="p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-black/60 dark:text-white/60 hover:bg-black/10 dark:hover:bg-white/10 flex flex-col items-center justify-center gap-1.5 transition-all"
                             >
                                 <Settings size={18} />
                                 <span className="text-[0.6rem] font-bold tracking-wider">TOL</span>
                             </button>
 
-                            <button className="p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-black/60 dark:text-white/60 hover:bg-black/10 dark:hover:bg-white/10 flex flex-col items-center justify-center gap-1.5 transition-all">
+                            <button
+                                onClick={() => setShowBOM && setShowBOM(true)}
+                                title="View Bill of Materials"
+                                className="p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-black/60 dark:text-white/60 hover:bg-black/10 dark:hover:bg-white/10 flex flex-col items-center justify-center gap-1.5 transition-all"
+                            >
                                 <Box size={18} />
-                                <span className="text-[0.6rem] font-bold tracking-wider">VIEW</span>
+                                <span className="text-[0.6rem] font-bold tracking-wider">BOM</span>
+                            </button>
+                        </div>
+
+                        {/* DFM & Cost Analysis Buttons - NEW */}
+                        <div className="grid grid-cols-2 gap-3 mt-4">
+                            <button
+                                onClick={() => dfmAnalysis && setShowDFM(true)}
+                                disabled={!dfmAnalysis}
+                                title="View DFM (Design for Manufacturing) analysis"
+                                className={`p-3 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all border-2
+                                    ${dfmAnalysis
+                                        ? 'bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border-cyan-500/50 text-cyan-600 dark:text-cyan-400 hover:from-cyan-500/30 hover:to-blue-500/30'
+                                        : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400 cursor-not-allowed'}`}
+                            >
+                                <Settings size={18} />
+                                <span className="text-[0.6rem] font-bold tracking-wider">DFM</span>
+                                {dfmAnalysis && <span className="text-[0.55rem] font-medium">{dfmAnalysis.score}/100</span>}
+                            </button>
+
+                            <button
+                                onClick={() => costEstimate && setShowCost(true)}
+                                disabled={!costEstimate}
+                                title="View cost estimation breakdown"
+                                className={`p-3 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all border-2
+                                    ${costEstimate
+                                        ? 'bg-gradient-to-br from-emerald-500/20 to-green-500/20 border-emerald-500/50 text-emerald-600 dark:text-emerald-400 hover:from-emerald-500/30 hover:to-green-500/30'
+                                        : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400 cursor-not-allowed'}`}
+                            >
+                                <Package size={18} />
+                                <span className="text-[0.6rem] font-bold tracking-wider">COST</span>
+                                {costEstimate && <span className="text-[0.55rem] font-medium">₹{costEstimate.total_cost}</span>}
                             </button>
                         </div>
 
                         {/* Download Buttons - Always visible for discovery */}
-                        <div className="grid grid-cols-2 gap-3 animate-slide-up mt-auto">
+                        <div className="grid grid-cols-2 gap-3 mt-6">
                             <button
                                 onClick={() => downloadFile(stlBlob, `NeuralCAD_Model_${Date.now()}.stl`, 'model/stl')}
                                 disabled={!stlBlob}
-                                className={`p-4 px-3 flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 text-xs font-semibold transition-all
-            ${stlBlob ? 'bg-neonc/20 border-neonc/50 text-white hover:bg-neonc/30 cursor-pointer' : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/5 text-black/20 dark:text-white/20 cursor-not-allowed'}`}
+                                className={`p-4 px-3 flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 text-xs font-bold transition-all
+                                    ${stlBlob
+                                        ? 'bg-gradient-to-br from-cyan-500 to-blue-600 border-cyan-400 text-white hover:from-cyan-400 hover:to-blue-500 shadow-lg shadow-cyan-500/30 cursor-pointer'
+                                        : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400 cursor-not-allowed'}`}
                             >
                                 <Download size={18} /> STL
                             </button>
@@ -227,27 +270,33 @@ export default function ControlPanel({
                             <button
                                 onClick={downloadCode}
                                 disabled={!scriptId}
-                                className={`p-4 px-3 flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 text-xs font-semibold transition-all
-            ${scriptId ? 'bg-gray-100 dark:bg-white/10 border-gray-200 dark:border-white/20 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-white/20 cursor-pointer' : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/5 text-black/20 dark:text-white/20 cursor-not-allowed'}`}
+                                className={`p-4 px-3 flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 text-xs font-bold transition-all
+                                    ${scriptId
+                                        ? 'bg-gradient-to-br from-purple-500 to-pink-600 border-purple-400 text-white hover:from-purple-400 hover:to-pink-500 shadow-lg shadow-purple-500/30 cursor-pointer'
+                                        : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400 cursor-not-allowed'}`}
                             >
                                 <Code size={18} /> CODE
                             </button>
 
-                            {/* Advanced Formats (Optional/Paid Feature in real app, here we show them disabled if not ready) */}
+                            {/* STEP/IGES - Hidden on mobile, shown on larger screens */}
                             <button
                                 onClick={() => downloadFile(stlBlob, `NeuralCAD_Model_${Date.now()}.step`, 'application/step')}
-                                disabled={!stepUrl && !stlBlob} // Fallback to STL blob for demo if stepUrl missing, or just disabled
-                                className={`hidden md:flex p-4 px-3 flex-col items-center justify-center gap-1.5 rounded-xl border-2 text-xs font-semibold transition-all
-            ${stlBlob ? 'bg-neonp/20 border-neonp/50 text-white hover:bg-neonp/30 cursor-pointer' : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/5 text-black/20 dark:text-white/20 cursor-not-allowed'}`}
+                                disabled={!stlBlob}
+                                className={`hidden md:flex p-4 px-3 flex-col items-center justify-center gap-1.5 rounded-xl border-2 text-xs font-bold transition-all
+                                    ${stlBlob
+                                        ? 'bg-gradient-to-br from-emerald-500 to-teal-600 border-emerald-400 text-white hover:from-emerald-400 hover:to-teal-500 shadow-lg shadow-emerald-500/30 cursor-pointer'
+                                        : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400 cursor-not-allowed'}`}
                             >
                                 <FileDown size={18} /> STEP
                             </button>
 
                             <button
                                 onClick={() => downloadFile(stlBlob, `NeuralCAD_Model_${Date.now()}.iges`, 'model/iges')}
-                                disabled={!stepUrl && !stlBlob}
-                                className={`hidden md:flex p-4 px-3 flex-col items-center justify-center gap-1.5 rounded-xl border-2 text-xs font-semibold transition-all
-            ${stlBlob ? 'bg-neona/20 border-neona/50 text-white hover:bg-neona/30 cursor-pointer' : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/5 text-black/20 dark:text-white/20 cursor-not-allowed'}`}
+                                disabled={!stlBlob}
+                                className={`hidden md:flex p-4 px-3 flex-col items-center justify-center gap-1.5 rounded-xl border-2 text-xs font-bold transition-all
+                                    ${stlBlob
+                                        ? 'bg-gradient-to-br from-amber-500 to-orange-600 border-amber-400 text-white hover:from-amber-400 hover:to-orange-500 shadow-lg shadow-amber-500/30 cursor-pointer'
+                                        : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400 cursor-not-allowed'}`}
                             >
                                 <Package size={18} /> IGES
                             </button>

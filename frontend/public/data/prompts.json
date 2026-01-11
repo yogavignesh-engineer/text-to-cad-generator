@@ -1,0 +1,158 @@
+{
+  "categories": [
+    {
+      "id": "basic",
+      "name": "Basic Shapes",
+      "icon": "🔲",
+      "color": "#667eea",
+      "prompts": [
+        {
+          "text": "50x50x10mm steel plate",
+          "description": "Simple rectangular plate",
+          "preview": "box",
+          "complexity": "beginner"
+        },
+        {
+          "text": "cylinder 30mm diameter 80mm height",
+          "description": "Basic cylindrical shaft",
+          "preview": "cylinder",
+          "complexity": "beginner"
+        },
+        {
+          "text": "sphere 40mm radius",
+          "description": "Perfect sphere",
+          "preview": "sphere",
+          "complexity": "beginner"
+        },
+        {
+          "text": "100x60x20 aluminum block",
+          "description": "Solid aluminum block",
+          "preview": "box",
+          "complexity": "beginner"
+        }
+      ]
+    },
+    {
+      "id": "gears",
+      "name": "Gears & Mechanical",
+      "icon": "⚙️",
+      "color": "#f093fb",
+      "prompts": [
+        {
+          "text": "gear with 20 teeth, 60mm diameter, 10mm thick",
+          "description": "Small spur gear",
+          "preview": "gear",
+          "complexity": "intermediate"
+        },
+        {
+          "text": "gear with 24 teeth, 80mm diameter, 15mm thick",
+          "description": "Medium spur gear",
+          "preview": "gear",
+          "complexity": "intermediate"
+        },
+        {
+          "text": "gear with 32 teeth, 100mm diameter, 20mm thick",
+          "description": "Large spur gear",
+          "preview": "gear",
+          "complexity": "intermediate"
+        },
+        {
+          "text": "piston 75mm diameter 100mm height",
+          "description": "Engine piston shape",
+          "preview": "piston",
+          "complexity": "advanced"
+        }
+      ]
+    },
+    {
+      "id": "features",
+      "name": "With Features",
+      "icon": "🔩",
+      "color": "#4facfe",
+      "prompts": [
+        {
+          "text": "100x100x10 plate with 30mm center hole",
+          "description": "Plate with through-hole",
+          "preview": "box_with_hole",
+          "complexity": "intermediate"
+        },
+        {
+          "text": "50x50x25 block with 5mm fillet",
+          "description": "Filleted edges",
+          "preview": "box_filleted",
+          "complexity": "intermediate"
+        },
+        {
+          "text": "80x80x15 plate with 4 corner holes 8mm",
+          "description": "Mounting plate",
+          "preview": "box_corners",
+          "complexity": "advanced"
+        },
+        {
+          "text": "cylinder 40mm diameter 100mm height with 20mm hole",
+          "description": "Hollow cylinder/tube",
+          "preview": "tube",
+          "complexity": "intermediate"
+        }
+      ]
+    },
+    {
+      "id": "advanced",
+      "name": "Advanced Parts",
+      "icon": "🏭",
+      "color": "#fa709a",
+      "prompts": [
+        {
+          "text": "flange coupling 80mm diameter 50mm length",
+          "description": "Shaft coupling",
+          "preview": "flange",
+          "complexity": "advanced"
+        },
+        {
+          "text": "tube 60mm outer diameter 50mm inner diameter 100mm height",
+          "description": "Precision tube",
+          "preview": "tube",
+          "complexity": "advanced"
+        },
+        {
+          "text": "crankshaft 150mm length",
+          "description": "Engine crankshaft",
+          "preview": "crankshaft",
+          "complexity": "expert"
+        },
+        {
+          "text": "100x100x20 steel base plate with 4 M8 mounting holes",
+          "description": "Mounting base",
+          "preview": "mounting_plate",
+          "complexity": "advanced"
+        }
+      ]
+    },
+    {
+      "id": "demo",
+      "name": "Demo Examples",
+      "icon": "✨",
+      "color": "#feca57",
+      "prompts": [
+        {
+          "text": "gear with 24 teeth, 80mm diameter, 15mm thick, steel",
+          "description": "Perfect demo gear",
+          "preview": "gear",
+          "complexity": "intermediate"
+        },
+        {
+          "text": "150x100x20 aluminum plate with 40mm center hole",
+          "description": "Impressive plate demo",
+          "preview": "box_with_hole",
+          "complexity": "intermediate"
+        },
+        {
+          "text": "piston 80mm diameter 120mm height copper",
+          "description": "Colorful piston",
+          "preview": "piston",
+          "complexity": "advanced"
+        }
+      ]
+    }
+  ]
+}

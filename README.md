@@ -76,26 +76,23 @@ cd neuralcad
 
 ### 2. Backend Setup
 
+### 2. Backend Setup
+
 ```bash
 cd backend
-
-# Create virtual environment (recommended)
-python -m venv venv
-venv\Scripts\activate  # Windows
-# source venv/bin/activate  # Linux/Mac
-
-# Install dependencies
+python -m venv .venv
+# Activate venv: .venv\Scripts\Activate (Windows) or source .venv/bin/activate (Mac/Linux)
 pip install -r requirements.txt
 
 # Set environment variable for Gemini AI (optional)
 set GEMINI_API_KEY=your_api_key_here  # Windows
 # export GEMINI_API_KEY=your_api_key_here  # Linux/Mac
 
-# Start server
+# Start server (Production Mode)
 python main.py
 ```
 
-Server runs at `http://localhost:8000`
+Server runs at `http://localhost:8001`
 
 ### 3. Frontend Setup
 

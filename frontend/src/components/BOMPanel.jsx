@@ -26,7 +26,7 @@ export default function BOMPanel({ bom, onClose }) {
                 <div className="mb-6 bg-white/5 p-4 rounded-xl border border-white/10">
                     <div className="text-xs text-white/50 uppercase tracking-widest mb-1">Total Estimated Cost</div>
                     <div className="text-3xl font-bold text-neonp font-mono">
-                        ${bom.cost.toFixed(2)}
+                        ₹{bom.cost.toFixed(2)}
                     </div>
                 </div>
 
@@ -52,10 +52,10 @@ export default function BOMPanel({ bom, onClose }) {
                         <div className="text-xs text-white/50 uppercase tracking-widest mb-3 pb-2 border-b border-white/10">Cost Breakdown</div>
                         <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
                             <span className="text-white/70">Material Cost</span>
-                            <span className="text-right font-mono">${(bom.mass * bom.pricePerGram).toFixed(2)}</span>
+                            <span className="text-right font-mono">₹{(bom.mass * bom.pricePerGram).toFixed(2)}</span>
 
                             <div className="col-span-2 text-xs text-white/40 italic mt-1">
-                                * Based on market average of ${bom.pricePerGram}/g
+                                * Based on market average of ₹{bom.pricePerGram}/g
                             </div>
                         </div>
                     </div>

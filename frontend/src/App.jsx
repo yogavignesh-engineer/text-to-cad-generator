@@ -12,12 +12,18 @@ import ValidationPopup from './components/ValidationPopup';
 import SuccessConfetti from './components/SuccessConfetti';
 import DimensionAnnotations from './components/DimensionAnnotations';
 import ControlPanel from './components/ControlPanel';
+import EmptyState from './components/EmptyState';
+import DFMPanel from './components/DFMPanel';
+import CostPanel from './components/CostPanel';
 import { MATERIALS } from './components/MaterialSelector';
+import LandingPage from './components/LandingPage';
+import SamplePrompts from './components/SamplePrompts';
+import ParametricEditor from './components/ParametricEditor';
+import CommandPalette from './components/CommandPalette';
 
 // 3D Components
 import StlModel from './components/3d/StlModel';
 import DynamicModel from './components/3d/DynamicModel';
-import CameraController from './components/3d/CameraController';
 
 // Utils
 import { parsePrompt, validateGeometry, calculateBOM, detectModifications } from './utils/geometryEngine';
@@ -26,6 +32,9 @@ import { useCADGenerator } from './hooks/useCADGenerator';
 const API_URL = "http://127.0.0.1:8001";
 
 export default function App() {
+  // LANDING PAGE STATE
+  const [showLanding, setShowLanding] = useState(false); // Changed to false - skip landing, go straight to dashboard
+
   const [prompt, setPrompt] = useState("");
   const [currentMaterial, setCurrentMaterial] = useState("steel");
   const [ready, setReady] = useState(false);
@@ -43,10 +52,15 @@ export default function App() {
   const [bom, setBom] = useState(null);
   const [showTolerance, setShowTolerance] = useState(false);
   const [shakeButton, setShakeButton] = useState(false);
+  const [showDFM, setShowDFM] = useState(false);
+  const [showCost, setShowCost] = useState(false);
   const [parsedParameters, setParsedParameters] = useState(null);
   const [showDimensions, setShowDimensions] = useState(false);
   const [lastModel, setLastModel] = useState(null);
-  const [validation, setValidation] = useState(null); // Fix: Added missing state
+  const [validation, setValidation] = useState(null);
+  const [showSamplePrompts, setShowSamplePrompts] = useState(false);
+  const [showParametricEditor, setShowParametricEditor] = useState(false);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
 
   // Mobile Menu State
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -54,7 +68,7 @@ export default function App() {
   // INIT HOOK
   const {
     loading, modelUrl, stlBlob, scriptId, progress, stats,
-    generatedCode, manufacturingNotes,
+    generatedCode, manufacturingNotes, dfmAnalysis, costEstimate,
     generateCAD: generateCADFromHook, downloadFile, downloadCode
   } = useCADGenerator(API_URL,
     (p, m, s) => addToHistory(p, m, s),
@@ -68,25 +82,45 @@ export default function App() {
     setTimeout(() => setReady(true), 1200);
   }, []);
 
-  // Fix: Toggle dark mode on HTML root for Tailwind to detect it globally
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
     } else {
       document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
     }
   }, [darkMode]);
 
   // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyPress = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'g') { e.preventDefault(); if (prompt.trim()) generateCAD(false); }
+      // Command Palette - Ctrl+K (check both 'k' and 'K')
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setShowCommandPalette(true);
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (prompt.trim() && !loading) generateCAD(false);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+        e.preventDefault();
+        if (stlBlob) {
+          downloadFile(stlBlob, `NeuralCAD_Model_${Date.now()}.stl`, 'model/stl');
+          toast.success('STL Downloaded!');
+        } else {
+          toast('No model to download yet', { icon: '⚠️' });
+        }
+      }
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); handleUndo(); }
       if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); handleRedo(); }
     };
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [prompt, historyIndex, history]);
+  }, [prompt, historyIndex, history, loading, stlBlob]);
 
   const addToHistory = (promptText, mat, shape) => {
     const newItem = { prompt: promptText, material: mat, shape, timestamp: Date.now() };
@@ -147,7 +181,6 @@ export default function App() {
       return;
     }
 
-    // Hook handles execution
     await generateCADFromHook(currentPrompt, useAI, currentMaterial, parsed, setShowDemo, setShowConfetti, setShowBOM);
   };
 
@@ -173,6 +206,11 @@ export default function App() {
   };
 
   const bgColor = darkMode ? '#000' : '#f0f0f0';
+
+  // RENDER LANDING PAGE IF ACTIVE
+  if (showLanding) {
+    return <LandingPage onStart={() => setShowLanding(false)} />;
+  }
 
   return (
     <div className={`w-screen h-screen relative overflow-hidden ${darkMode ? 'dark bg-radial-dark' : 'bg-radial-light'}`}>
@@ -200,7 +238,13 @@ export default function App() {
       </div>
 
       {/* Popups */}
-      {showConfetti && <SuccessConfetti />}
+      {showConfetti && (
+        <SuccessConfetti
+          dfmScore={dfmAnalysis?.score}
+          cost={costEstimate?.total_cost}
+          onComplete={() => setShowConfetti(false)}
+        />
+      )}
       {showValidationPopup && (
         <ValidationPopup validation={validationResult} onClose={() => setShowValidationPopup(false)} onProceed={() => generateCAD(true)} />
       )}
@@ -217,6 +261,40 @@ export default function App() {
       )}
 
       {showTolerance && <TolerancePanel onClose={() => setShowTolerance(false)} />}
+
+      {/* DFM Analysis Panel */}
+      {showDFM && dfmAnalysis && <DFMPanel dfmData={dfmAnalysis} onClose={() => setShowDFM(false)} />}
+
+      {/* Cost Estimate Panel */}
+      {showCost && costEstimate && <CostPanel costData={costEstimate} onClose={() => setShowCost(false)} />}
+
+      {/* Sample Prompts Library */}
+      {showSamplePrompts && <SamplePrompts onSelect={(text) => { setPrompt(text); validatePrompt(); }} onClose={() => setShowSamplePrompts(false)} darkMode={darkMode} />}
+
+      {/* Parametric Editor */}
+      {showParametricEditor && parsedParameters && (
+        <ParametricEditor
+          parameters={parsedParameters}
+          onUpdate={(newDims) => {
+            // Reconstruct prompt from new dimensions
+            const shape = parsedParameters.shape;
+            let newPrompt = '';
+            if (shape === 'box') {
+              newPrompt = `${newDims.length}x${newDims.width}x${newDims.height} ${currentMaterial} plate`;
+            } else if (shape === 'cylinder') {
+              newPrompt = `cylinder ${newDims.diameter}mm diameter ${newDims.height}mm height ${currentMaterial}`;
+            } else {
+              newPrompt = prompt; // Fallback
+            }
+            setPrompt(newPrompt);
+            validatePrompt();
+            generateCAD(false);
+          }}
+          onClose={() => setShowParametricEditor(false)}
+          darkMode={darkMode}
+          loading={loading}
+        />
+      )}
 
       {/* Top Right Stats */}
       <div className="fixed top-[30px] right-[30px] flex gap-4 z-[100]">
@@ -242,9 +320,8 @@ export default function App() {
 
       {/* Main Sidebar */}
       <ControlPanel
-        isOpen={isMenuOpen} setIsOpen={setIsMenuOpen}
         downloadCode={downloadCode}
-        generatedCode={generatedCode} // Pass code for transparency
+        generatedCode={generatedCode}
         darkMode={darkMode} prompt={prompt} setPrompt={setPrompt}
         loading={loading} generateCAD={generateCAD}
         handleUndo={handleUndo} handleRedo={handleRedo}
@@ -257,7 +334,13 @@ export default function App() {
         parsedParameters={parsedParameters} useAI={useAI} setUseAI={setUseAI}
         stlBlob={stlBlob} stepUrl={null} downloadFile={downloadFile}
         material={currentMaterial} setMaterial={setCurrentMaterial} shakeButton={shakeButton}
-        scriptId={scriptId} // Fix: Pass scriptId
+        scriptId={scriptId}
+        dfmAnalysis={dfmAnalysis} costEstimate={costEstimate}
+        showDFM={showDFM} setShowDFM={setShowDFM}
+        showCost={showCost} setShowCost={setShowCost}
+        setShowBOM={setShowBOM}
+        showSamplePrompts={showSamplePrompts} setShowSamplePrompts={setShowSamplePrompts}
+        showParametricEditor={showParametricEditor} setShowParametricEditor={setShowParametricEditor}
       />
 
       {/* 3D View */}
@@ -282,9 +365,11 @@ export default function App() {
           </Suspense>
 
           <DimensionAnnotations dimensions={parsedParameters?.dimensions} visible={showDimensions} />
-          <CameraController hasModel={!!modelUrl || showDemo} />
-          <OrbitControls makeDefault enableDamping dampingFactor={0.05} minDistance={30} maxDistance={300} maxPolarAngle={Math.PI / 2} />
+          <OrbitControls makeDefault enableDamping dampingFactor={0.05} minDistance={20} maxDistance={500} />
         </Canvas>
+
+        {/* Empty State Overlay */}
+        {!modelUrl && !showDemo && <EmptyState />}
       </div>
     </div>
   );
