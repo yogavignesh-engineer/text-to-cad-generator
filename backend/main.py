@@ -1,10 +1,11 @@
 """
 ===============================================================================
-NEURALCAD v6.0 - PRODUCTION BACKEND (REFACTORED)
+NEURALCAD v7.0 - PRODUCTION BACKEND (ENHANCED)
 Award-Winning Text-to-CAD System - Server
-Security Hardened & Non-Blocking & GD&T Enabled
+Security Hardened & Non-Blocking & GD&T Enabled & AI-Powered
 ===============================================================================
 """
+
 
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,8 +29,19 @@ from export_manager import ExportManager
 import subprocess
 import tempfile
 
-# Import AI chat functionality
-from ai_chat import detect_prompt_ambiguities, ChatRequest, ChatResponse
+# Import AI chat functionality (optional - graceful degradation if not available)
+try:
+    from ai_chat import detect_prompt_ambiguities, ChatRequest, ChatResponse, handle_ai_chat, parse_with_ai_assist
+    AI_CHAT_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️  AI Chat module not available: {e}")
+    print(f"⚠️  AI features will be disabled")
+    AI_CHAT_AVAILABLE = False
+    detect_prompt_ambiguities = None
+    ChatRequest = None
+    ChatResponse = None
+    handle_ai_chat = None
+    parse_with_ai_assist = None
 
 # Suppress Deprecation/Future Warnings for clean demo output
 warnings.filterwarnings("ignore")
@@ -40,8 +52,11 @@ load_dotenv()
 # Configure Gemini API
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
-    raise ValueError("GEMINI_API_KEY environment variable not set.")
-genai.configure(api_key=GEMINI_API_KEY)
+    print("⚠️  WARNING: GEMINI_API_KEY not set - AI features will not work")
+    AI_CHAT_AVAILABLE = False
+else:
+    genai.configure(api_key=GEMINI_API_KEY)
+
 
 # ============= APPLICATION SETUP =============
 app = FastAPI(
@@ -418,6 +433,29 @@ async def generate_cad(request: PromptRequest, response: Response):
         import traceback
         traceback.print_exc()
         raise HTTPException(500, str(e))
+
+# ============= AI CHAT ENDPOINT =============
+
+@app.post("/ai/chat")
+async def ai_chat_endpoint(request: ChatRequest):
+    """
+    Multi-turn AI conversation endpoint
+    Provides conversational clarification for ambiguous CAD requests
+    """
+    if not AI_CHAT_AVAILABLE:
+        raise HTTPException(
+            503,
+            "AI chat features are not available. Please configure GEMINI_API_KEY."
+        )
+    
+    try:
+        # Call the AI chat handler from ai_chat module
+        response = await handle_ai_chat(request)
+        return response
+    except Exception as e:
+        print(f"AI chat error: {e}")
+        raise HTTPException(500, f"AI chat failed: {str(e)}")
+
 
 @app.get("/download_code/{filename}")
 async def download_code(filename: str):

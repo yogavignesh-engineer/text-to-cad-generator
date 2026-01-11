@@ -1,13 +1,16 @@
 """
 AI Chat Backend Endpoint
 Real Gemini API integration for multi-turn conversation
-IMPROVEMENT: Backend AI Integration
+IMPROVE MENT: Backend AI Integration
 """
 
-from fastapi import HTTPException
+from fastapi import HTTPException, Response
 from pydantic import BaseModel
 from typing import List, Dict, Optional
 import google.generativeai as genai
+import uuid
+import json
+import re
 
 # Chat request/response models
 class ChatMessage(BaseModel):
@@ -24,6 +27,12 @@ class ChatResponse(BaseModel):
     ambiguities: List[Dict] = []
     clarification_needed: bool = False
     suggested_prompts: List[str] = []
+
+# Prompt request model (for generate_with_ai)
+class PromptRequest(BaseModel):
+    text: str
+    useai: bool = False
+    export_formats: List[str] = ["stl"]
 
 # Ambiguity detection
 def detect_prompt_ambiguities(prompt: str, context: Dict = None) -> List[Dict]:
@@ -94,11 +103,11 @@ def detect_prompt_ambiguities(prompt: str, context: Dict = None) -> List[Dict]:
     
     return ambiguities
 
-# AI chat endpoint
-@app.post("/ai/chat", response_model=ChatResponse)
-async def ai_chat(request: ChatRequest):
+# AI chat function (to be called from main.py endpoint)
+async def handle_ai_chat(request: ChatRequest) -> ChatResponse:
     """
-    Multi-turn AI conversation endpoint with ambiguity detection
+    Multi-turn AI conversation with ambiguity detection
+    This function is called from the /ai/chat endpoint in main.py
     """
     try:
         # Initialize Gemini model
@@ -115,8 +124,8 @@ async def ai_chat(request: ChatRequest):
         # Start chat with history
         chat = model.start_chat(history=history)
         
-        # Send user message
-        response = await chat.send_message_async(request.message)
+        # Send user message (synchronous - gemini SDK doesn't support async yet)
+        response = chat.send_message(request.message)
         response_text = response.text
         
         # Detect ambiguities in the user's latest message
@@ -148,58 +157,44 @@ async def ai_chat(request: ChatRequest):
         print(f"AI Chat Error: {str(e)}")
         raise HTTPException(500, f"AI chat failed: {str(e)}")
 
-# Enhanced generate endpoint with AI fallback
-@app.post("/generate_with_ai")
-async def generate_with_ai_assist(request: PromptRequest, response: Response):
+# Enhanced prompt parsing with AI fallback
+async def parse_with_ai_assist(prompt_text: str, low_confidence: bool = False):
     """
-    Enhanced generation with AI assistance for ambiguous prompts
+    Use AI to parse ambiguous prompts
+    Returns: dict with shape, dimensions, features
     """
-    current_id = str(uuid.uuid4())[:8]
-    
+    if not low_confidence:
+        return None  # Only use AI if needed
+        
     try:
-        # Step 1: Try standard parsing
-        shape = EnhancedParser.detect_shape(request.text)
-        dims = EnhancedParser.extract_dimensions_with_tolerance(request.text)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        ai_prompt = f"""
+        Parse this CAD modeling request and extract exact dimensions:
+        "{prompt_text}"
         
-        # Step 2: Validate
-        validation = EnhancedParser.validate_parsed_dimensions(dims, request.text)
+        Return ONLY valid JSON (no markdown, no explanation):
+        {{
+            "shape": "box|cylinder|sphere|gear",
+            "dimensions": {{
+                "length": number_in_mm,
+                "width": number_in_mm,
+                "height": number_in_mm
+            }},
+            "features": ["center_hole", "fillet_2mm", etc]
+        }}
+        """
         
-        # Step 3: If validation fails or confidence is low, use AI
-        if not validation['valid'] or len(validation['warnings']) > 2:
-            print(f"[{current_id}] Low confidence, using AI assist...")
-            
-            # Call Gemini for better parsing
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            ai_prompt = f"""
-            Parse this CAD modeling request and extract exact dimensions:
-            "{request.text}"
-            
-            Return JSON format:
-            {{
-                "shape": "box|cylinder|sphere|gear",
-                "dimensions": {{
-                    "length": number_in_mm,
-                    "width": number_in_mm,
-                    "height": number_in_mm
-                }},
-                "features": ["center_hole", "fillet_2mm", etc]
-            }}
-            """
-            
-            ai_response = await model.generate_content_async(ai_prompt)
-            ai_text = ai_response.text
-            
-            # Parse AI response (extract JSON)
-            import json
-            import re
-            json_match = re.search(r'\{.*\}', ai_text, re.DOTALL)
-            if json_match:
-                ai_data = json.loads(json_match.group())
-                shape = ai_data.get('shape', shape)
-                dims.update(ai_data.get('dimensions', {}))
+        response = model.generate_content(ai_prompt)
+        ai_text = response.text
         
-        # Step 4: Continue with normal generation
-        # ... (rest of generation logic from main.py)
+        # Extract JSON from response
+        json_match = re.search(r'\{.*\}', ai_text, re.DOTALL)
+        if json_match:
+            ai_data = json.loads(json_match.group())
+            return ai_data
+        
+        return None
         
     except Exception as e:
-        raise HTTPException(500, str(e))
+        print(f"AI parsing error: {e}")
+        return None
