@@ -29,8 +29,15 @@ from export_manager import ExportManager
 import subprocess
 import tempfile
 
-# Import AI chat functionality
-from ai_chat import AIChat
+# Import AI chat functionality with Import Trap Fix
+try:
+    from backend.ai_chat import AIChat
+except ImportError:
+    try:
+        from ai_chat import AIChat
+    except ImportError:
+        print("⚠️ AIChat module missing")
+        AIChat = None
 
 # Define text-only chat models (Elite simplified version)
 class ChatRequest(BaseModel):
