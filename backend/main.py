@@ -29,19 +29,26 @@ from export_manager import ExportManager
 import subprocess
 import tempfile
 
-# Import AI chat functionality (optional - graceful degradation if not available)
-try:
-    from ai_chat import detect_prompt_ambiguities, ChatRequest, ChatResponse, handle_ai_chat, parse_with_ai_assist
-    AI_CHAT_AVAILABLE = True
-except ImportError as e:
-    print(f"⚠️  AI Chat module not available: {e}")
-    print(f"⚠️  AI features will be disabled")
-    AI_CHAT_AVAILABLE = False
-    detect_prompt_ambiguities = None
-    ChatRequest = None
-    ChatResponse = None
-    handle_ai_chat = None
-    parse_with_ai_assist = None
+# Import AI chat functionality
+from ai_chat import AIChat
+
+# Define text-only chat models (Elite simplified version)
+class ChatRequest(BaseModel):
+    message: str
+    conversation_history: List[Dict] = []
+    context: Optional[Dict] = None
+
+# Enhanced prompt parsing with AI fallback (Moved to main.py)
+async def parse_with_ai_assist(prompt_text: str, low_confidence: bool = False):
+    """Use AI to parse ambiguous prompts"""
+    if not low_confidence: return None
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        response = model.generate_content(f"Extract CAD dimensions from: '{prompt_text}'. Return JSON {{shape, dimensions}} only.")
+        match = re.search(r'\{.*\}', response.text, re.DOTALL)
+        return json.loads(match.group()) if match else None
+    except: return None
+
 
 # Suppress Deprecation/Future Warnings for clean demo output
 warnings.filterwarnings("ignore")
@@ -508,6 +515,24 @@ async def ai_chat_endpoint(request: ChatRequest):
         print(f"AI chat error: {e}")
         raise HTTPException(500, f"AI chat failed: {str(e)}")
 
+
+@app.post("/ai/chat")
+async def chat_endpoint(request: ChatRequest):
+    """Elite AI Chat Endpoint"""
+    try:
+        chat_bot = AIChat()
+        response_text = await chat_bot.get_response(request.message, request.conversation_history)
+        
+        # Structure response for frontend compatibility
+        return JSONResponse({
+            "response": response_text,
+            "ambiguities": [], # Elite AI solves ambiguity internally
+            "clarification_needed": False,
+            "suggested_prompts": []
+        })
+    except Exception as e:
+        print(f"AI Chat Error: {e}")
+        return JSONResponse({"response": "NeuralCAD Brain Offline (Connection Error)"})
 
 @app.get("/download/{filename}")
 async def download_file(filename: str):
