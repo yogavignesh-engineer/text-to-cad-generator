@@ -9,8 +9,8 @@ export function MatrixTerminal({ isVisible }) { // Adapted prop name to match Ap
         if (!isGenerating) return;
 
         // Connect to the streaming endpoint
-        // FIXED: Port 8001 to match main.py configuration
-        const eventSource = new EventSource('http://localhost:8001/api/stream-logs');
+        // Connect to the streaming endpoint (Relative path via Proxy)
+        const eventSource = new EventSource('/api/stream-logs');
 
         eventSource.onmessage = (event) => {
             const log = event.data;

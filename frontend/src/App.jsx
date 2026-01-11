@@ -30,7 +30,7 @@ import MatrixTerminal from './components/MatrixTerminal';
 import { parsePrompt, validateGeometry, calculateBOM, detectModifications } from './utils/geometryEngine';
 import { useCADGenerator } from './hooks/useCADGenerator';
 
-const API_URL = "http://127.0.0.1:8001";
+const API_URL = ""; // Use relative paths for Proxy support
 
 export default function App() {
   // LANDING PAGE STATE
@@ -359,8 +359,8 @@ export default function App() {
           {darkMode && <Stars radius={350} depth={50} count={7000} factor={5} saturation={0} speed={0.5} />}
 
           <Suspense fallback={null}>
-            {modelUrl && <StlModel url={modelUrl} material={MATERIALS[currentMaterial] || MATERIALS.steel} />}
-            {showDemo && !modelUrl && <DynamicModel prompt={prompt} type={currentMaterial} />}
+            {modelUrl && <DynamicModel fileUrl={modelUrl} color={MATERIALS[currentMaterial]?.color || "#29b6f6"} />}
+            {showDemo && !modelUrl && <DynamicModel fileUrl={null} />}
             <ContactShadows position={[0, -30, 0]} opacity={darkMode ? 0.6 : 0.3} scale={100} blur={2.5} />
             <Grid infiniteGrid fadeDistance={450} sectionColor={darkMode ? "#b026ff" : "#667eea"} sectionSize={60} cellSize={12} cellThickness={0.8} fadeStrength={2} />
           </Suspense>
@@ -378,6 +378,41 @@ export default function App() {
             <MatrixTerminal isVisible={loading} />
           </div>
         </div>
+
+        {/* Engineering Spec Sheet Overlay (Elite Feature) */}
+        {modelUrl && lastModel && (
+          <div className="absolute top-24 right-5 z-[50] w-64 bg-black/80 backdrop-blur-md border border-cyan-500/30 p-4 rounded-xl text-cyan-400 font-mono text-sm shadow-[0_0_20px_rgba(6,182,212,0.15)] animate-in slide-in-from-right duration-700">
+            <div className="flex justify-between items-center border-b border-cyan-500/30 pb-2 mb-3">
+              <h3 className="font-bold tracking-widest text-xs">spec_sheet.json</h3>
+              <div className="flex gap-1">
+                <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
+              </div>
+            </div>
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="opacity-70">VOLUME</span>
+                <span className="font-bold">{lastModel.volume_mm3 ? (lastModel.volume_mm3 / 1000).toFixed(2) + ' cm³' : 'CALCULATING...'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="opacity-70">MASS (Est.)</span>
+                <span className="font-bold text-white">{lastModel.mass_g ? lastModel.mass_g.toFixed(1) + ' g' : 'CALCULATING...'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="opacity-70">MATERIAL</span>
+                <span className="font-bold text-white uppercase">{currentMaterial}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="opacity-70">BOUNDS</span>
+                <span className="font-bold">{lastModel.dimensions && Array.isArray(lastModel.dimensions) ?
+                  `${lastModel.dimensions[0].toFixed(0)}x${lastModel.dimensions[1].toFixed(0)}x${lastModel.dimensions[2].toFixed(0)}` : 'N/A'} mm</span>
+              </div>
+            </div>
+            <div className="mt-3 pt-2 border-t border-cyan-500/10 text-[10px] opacity-50 text-center">
+              VALIDATED: ELITECAD KERNEL v7.0
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

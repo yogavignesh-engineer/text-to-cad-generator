@@ -83,36 +83,23 @@ export const useCADGenerator = (API_URL, addToHistory, setLastModel, calculateBO
             });
 
             if (response.ok) {
-                const blob = await response.blob();
-                const scriptHeader = response.headers.get("X-Script-ID");
-                const notesHeader = response.headers.get("X-Manufacturing-Notes");
-                const dfmHeader = response.headers.get("X-DFM-Analysis");
-                const costHeader = response.headers.get("X-Cost-Estimate");
+                // Elite Upgrade: Handle JSON response with Metadata
+                const data = await response.json();
 
-                if (scriptHeader) {
-                    setScriptId(scriptHeader);
-                    fetchCodeContent(scriptHeader); // Transparently fetch code!
-                }
+                if (!data.success) throw new Error(data.error || 'Generation failed');
 
-                if (notesHeader) {
-                    try {
-                        setManufacturingNotes(JSON.parse(notesHeader));
-                    } catch (e) { console.error("Bad notes header"); }
-                }
+                const modelMetadata = data.metadata;
 
-                // Parse DFM Analysis
-                if (dfmHeader) {
-                    try {
-                        setDfmAnalysis(JSON.parse(dfmHeader));
-                    } catch (e) { console.error("Bad DFM header"); }
-                }
+                // Fetch the actual STL file from the returned URL
+                const stlUrl = data.files.stl || Object.values(data.files)[0];
+                const fileResponse = await fetch(stlUrl);
+                const blob = await fileResponse.blob();
 
-                // Parse Cost Estimate
-                if (costHeader) {
-                    try {
-                        setCostEstimate(JSON.parse(costHeader));
-                    } catch (e) { console.error("Bad cost header"); }
-                }
+                // Headers are now in the metadata or separate, but we stick to JSON data
+                const notes = modelMetadata.manufacturing_notes || [];
+                setManufacturingNotes(notes);
+
+                // Validation/Analysis handled by backend metadata if available
 
                 setStlBlob(blob);
                 const url = URL.createObjectURL(blob);
@@ -126,7 +113,14 @@ export const useCADGenerator = (API_URL, addToHistory, setLastModel, calculateBO
                 setStats(prev => ({ ...prev, totalGenerated: prev.totalGenerated + 1, avgTime: (Date.now() - startTime) / 1000 }));
 
                 addToHistory(prompt, material, parsedGeometry?.shape || 'box');
-                setLastModel(parsedGeometry);
+
+                // Merge geometry with calculated physics metadata
+                setLastModel({
+                    ...parsedGeometry,
+                    volume_mm3: modelMetadata.volume_mm3,
+                    mass_g: modelMetadata.mass_g,
+                    dimensions: modelMetadata.dimensions
+                });
 
                 // Calculate BOM
                 if (calculateBOM && MATERIALS) {
@@ -143,7 +137,6 @@ export const useCADGenerator = (API_URL, addToHistory, setLastModel, calculateBO
             setModelUrl(null);
             setShowDemo(false);  // Don't show demo mode
             setProgress({ status: 'error', progress: 0, message: 'Generation failed' });
-            // Don't show confetti or BOM on failure
         } finally {
             setLoading(false);
         }

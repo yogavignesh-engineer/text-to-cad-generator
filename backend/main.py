@@ -462,13 +462,13 @@ async def generate_cad(request: PromptRequest, response: Response):
         print(f"[{current_id}] ✓ Validation: {validation_results.get('message', 'Unknown')}")
         
         # ============= PHASE 6: RESPONSE PREPARATION =============
-        # Prepare file URLs for frontend
-        base_url = "http://localhost:8001"  # TODO: Make this configurable
+        # Prepare file URLs for frontend (Relative paths for Proxy/CORS support)
+        # base_url = "http://localhost:8001"  <-- REMOVED for Elite Proxy Support
         
         file_urls = {}
         for fmt, path in output_files.items():
             if path.exists():
-                file_urls[fmt] = f"{base_url}/download/{path.name}"
+                file_urls[fmt] = f"/download/{path.name}"
         
         # Return JSON response with metadata and file URLs
         return JSONResponse({
@@ -495,28 +495,10 @@ async def generate_cad(request: PromptRequest, response: Response):
 
 # ============= AI CHAT ENDPOINT =============
 
-@app.post("/ai/chat")
-async def ai_chat_endpoint(request: ChatRequest):
-    """
-    Multi-turn AI conversation endpoint
-    Provides conversational clarification for ambiguous CAD requests
-    """
-    if not AI_CHAT_AVAILABLE:
-        raise HTTPException(
-            503,
-            "AI chat features are not available. Please configure GEMINI_API_KEY."
-        )
-    
-    try:
-        # Call the AI chat handler from ai_chat module
-        response = await handle_ai_chat(request)
-        return response
-    except Exception as e:
-        print(f"AI chat error: {e}")
-        raise HTTPException(500, f"AI chat failed: {str(e)}")
 
 
-@app.post("/ai/chat")
+
+@app.post("/api/chat")
 async def chat_endpoint(request: ChatRequest):
     """Elite AI Chat Endpoint"""
     try:

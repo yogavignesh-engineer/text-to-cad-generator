@@ -58,7 +58,8 @@ export function AIChatInterface({ onPromptConfirmed }) {
             const prompt = initialPrompt || currentConversation?.messages[currentConversation.messages.length - 1]?.content;
 
             // REAL API CALL TO BACKEND (not fake logic)
-            const response = await fetch('http://localhost:8001/ai/chat', {
+            // Relative path via Proxy
+            const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
