@@ -25,12 +25,23 @@ import warnings
 # Import new enhanced modules
 from enhanced_parser import EnhancedParser
 from export_manager import ExportManager
+import subprocess
+import tempfile
+
+# Import AI chat functionality
+from ai_chat import detect_prompt_ambiguities, ChatRequest, ChatResponse
 
 # Suppress Deprecation/Future Warnings for clean demo output
 warnings.filterwarnings("ignore")
 
 # Load environment variables
 load_dotenv()
+
+# Configure Gemini API
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    raise ValueError("GEMINI_API_KEY environment variable not set.")
+genai.configure(api_key=GEMINI_API_KEY)
 
 # ============= APPLICATION SETUP =============
 app = FastAPI(
